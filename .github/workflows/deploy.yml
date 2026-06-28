@@ -1,0 +1,165 @@
+name: Healthcare AI Agent — CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  # Azure Container Registry
+  ACR_NAME: healthcareagentacr
+  IMAGE_NAME: healthcare-ai-agent
+  # Azure Container Apps
+  CONTAINER_APP_NAME: healthcare-agent-app
+  RESOURCE_GROUP: healthcare-agent-rg
+
+jobs:
+  # ─────────────────────────────────
+  # JOB 1: Run tests
+  # ─────────────────────────────────
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run guardrails tests
+        run: python -m pytest tests/ -v --tb=short
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+          AZURE_SEARCH_KEY: ${{ secrets.AZURE_SEARCH_KEY }}
+          AZURE_SEARCH_INDEX: healthcare-docs
+          COSMOS_ENDPOINT: ${{ secrets.COSMOS_ENDPOINT }}
+          COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
+          COSMOS_DB: healthcare_agent
+          COSMOS_CONTAINER: conversations
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONTAINER: policy-docs
+          SIMPLE_MODEL: gpt-4o-mini
+          COMPLEX_MODEL: gpt-4o
+          EMBEDDING_MODEL: text-embedding-3-large
+          CACHE_SIMILARITY_THRESHOLD: "0.80"
+          MAX_TOKENS: "1000"
+
+  # ─────────────────────────────────
+  # JOB 2: Build and push Docker image
+  # Only runs on push to main (not PRs)
+  # ─────────────────────────────────
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate build number
+        id: meta
+        run: |
+          # Build number = v1.0.BUILD_NUMBER
+          BUILD_NUM=${{ github.run_number }}
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          VERSION="v1.0.${BUILD_NUM}-${SHORT_SHA}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Build version: ${VERSION}"
+
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.ACR_NAME }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}
+          VERSION=${{ steps.meta.outputs.version }}
+
+          # Build with version tag AND latest tag
+          docker build -t ${IMAGE}:${VERSION} -t ${IMAGE}:latest .
+
+          # Push both tags
+          docker push ${IMAGE}:${VERSION}
+          docker push ${IMAGE}:latest
+
+          echo "Pushed: ${IMAGE}:${VERSION}"
+          echo "Pushed: ${IMAGE}:latest"
+
+  # ─────────────────────────────────
+  # JOB 3: Deploy to Azure Container Apps
+  # ─────────────────────────────────
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Apps
+        run: |
+          IMAGE=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}
+          VERSION=${{ needs.build.outputs.image_tag }}
+
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --image ${IMAGE}:${VERSION} \
+            --set-env-vars \
+              OPENAI_API_KEY=secretref:openai-key \
+              AZURE_SEARCH_ENDPOINT=secretref:search-endpoint \
+              AZURE_SEARCH_KEY=secretref:search-key \
+              COSMOS_ENDPOINT=secretref:cosmos-endpoint \
+              COSMOS_KEY=secretref:cosmos-key \
+              AZURE_STORAGE_CONNECTION_STRING=secretref:storage-conn \
+              SIMPLE_MODEL=gpt-4o-mini \
+              COMPLEX_MODEL=gpt-4o \
+              EMBEDDING_MODEL=text-embedding-3-large \
+              CACHE_SIMILARITY_THRESHOLD=0.80 \
+              MAX_TOKENS=1000 \
+              APP_ENV=production
+
+          echo "Deployed version: ${VERSION}"
+
+      - name: Smoke test deployment
+        run: |
+          # Wait for deployment to stabilize
+          sleep 30
+
+          # Test health endpoint
+          URL="https://${{ env.CONTAINER_APP_NAME }}.azurecontainerapps.io"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${URL}/health)
+
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Deployment healthy — ${URL}/health returned 200"
+          else
+            echo "❌ Health check failed — returned ${STATUS}"
+            exit 1
+          fi
+
+      - name: Tag successful deployment
+        run: |
+          VERSION=${{ needs.build.outputs.image_tag }}
+          echo "✅ Successfully deployed ${VERSION} to production"
+          echo "URL: https://${{ env.CONTAINER_APP_NAME }}.azurecontainerapps.io"
