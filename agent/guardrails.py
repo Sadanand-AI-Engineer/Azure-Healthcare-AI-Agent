@@ -158,6 +158,87 @@ def process_input(user_message: str) -> dict:
     # Step 4: All checks passed
     result["passed_guardrails"] = True
     return result
+def detect_intent(text: str) -> dict:
+    """
+    Detect the intent of the user message.
+    Returns category and confidence.
+
+    Categories:
+    - healthcare_insurance: coverage, prior auth, claims, deductibles
+    - healthcare_clinical: symptoms, medications, doctor questions
+    - off_topic: unrelated to healthcare entirely
+    """
+    text_lower = text.lower()
+
+    # Healthcare insurance keywords
+    insurance_keywords = [
+        "copay", "deductible", "coverage", "covered", "insurance",
+        "prior auth", "authorization", "claim", "premium", "benefit",
+        "in-network", "out-of-network", "formulary", "eob",
+        "coinsurance", "referral", "hmo", "ppo", "medicare",
+        "medicaid", "aca", "plan", "policy", "drug tier"
+    ]
+
+    # Clinical/health keywords
+    clinical_keywords = [
+        "fever", "headache", "pain", "symptom", "sick", "hurt",
+        "doctor", "hospital", "medication", "drug", "prescription",
+        "diagnosis", "treatment", "surgery", "therapy", "infection",
+        "blood pressure", "diabetes", "heart", "cancer", "allergy",
+        "cough", "nausea", "fatigue", "dizzy", "rash", "wound",
+        "interact", "side effect", "dose", "dosage", "pharmacy"
+    ]
+
+    # Off-topic keywords
+    off_topic_keywords = [
+        "pizza", "weather", "sports", "movie", "music", "game",
+        "politics", "stock", "crypto", "travel", "food", "recipe",
+        "news", "celebrity", "joke", "poem", "code", "programming"
+    ]
+
+    insurance_score = sum(
+        1 for kw in insurance_keywords if kw in text_lower
+    )
+    clinical_score = sum(
+        1 for kw in clinical_keywords if kw in text_lower
+    )
+    off_topic_score = sum(
+        1 for kw in off_topic_keywords if kw in text_lower
+    )
+
+    # Determine intent
+    if off_topic_score > 0 and insurance_score == 0 and clinical_score == 0:
+        return {
+            "intent": "off_topic",
+            "confidence": min(off_topic_score / 2, 1.0),
+            "redirect_message": (
+                "I'm your Healthcare AI Assistant — I'm specifically "
+                "designed to help with healthcare questions. I can help "
+                "you with:\n\n"
+                "🏥 Insurance coverage and benefits\n"
+                "💊 Drug interactions and formulary\n"
+                "📋 Prior authorization requirements\n"
+                "🩺 Health symptoms and doctor recommendations\n"
+                "📊 Medicare and CMS coverage data\n\n"
+                "Do you have any healthcare questions I can help with?"
+            )
+        }
+    elif clinical_score > 0:
+        return {
+            "intent": "healthcare_clinical",
+            "confidence": min(clinical_score / 3, 1.0)
+        }
+    elif insurance_score > 0:
+        return {
+            "intent": "healthcare_insurance",
+            "confidence": min(insurance_score / 3, 1.0)
+        }
+    else:
+        # Unclear — let the agent try to answer
+        return {
+            "intent": "healthcare_general",
+            "confidence": 0.5
+        }
 
 
 # Quick test — run this file directly to test guardrails
@@ -183,3 +264,4 @@ if __name__ == "__main__":
             print(f"Safe msg: {result['safe_message']}")
         print(f"Passed:  {result['passed_guardrails']}")
         print("-" * 50)
+    

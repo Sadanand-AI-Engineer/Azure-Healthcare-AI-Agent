@@ -1,13 +1,11 @@
 """
-Agent Tools — 4 tools, 3 different data sources
+Agent Tools — 5 tools, 4 different data sources
 
 Tool 1: search_policy_coverage      → Azure AI Search (coverage/costs)
 Tool 2: search_prior_auth_criteria  → Azure AI Search (approval criteria)
 Tool 3: check_drug_interaction_fda  → FDA openFDA API (live external)
 Tool 4: get_cms_coverage_data       → CMS data API (live external)
-
-GPT-4o reads the tool descriptions and decides which one to call.
-Each tool returns different type of information from different source.
+Tool 5: find_doctors_npi            → NPI Registry API (live external)
 """
 
 import os
@@ -42,27 +40,11 @@ def get_embedding(text: str) -> list[float]:
 
 # ============================================================
 # TOOL 1: Policy Coverage Search
-# Source: Azure AI Search — policy_general.txt focus
-# Purpose: Answer "is X covered?" and "how much does X cost?"
+# Source: Azure AI Search
 # ============================================================
 
-def search_policy_coverage(query: str) -> str:
-    """
-    Search insurance policy documents for coverage information.
-
-    Answers questions about:
-    - What services are covered
-    - Copay and coinsurance amounts
-    - Deductible and out-of-pocket limits
-    - In-network vs out-of-network benefits
-    - Annual visit limits
-
-    Uses hybrid search (keyword + vector) against Azure AI Search.
-    Prioritizes policy_general.txt which contains benefits schedule.
-
-    Different from Tool 2 which focuses on prior auth criteria.
-    This tool answers COVERAGE questions, not APPROVAL questions.
-    """
+def search_policy_coverage(query: str) -> dict:
+    """Search insurance policy for coverage and cost information."""
     query_embedding = get_embedding(query)
 
     results = search_client.search(
@@ -74,8 +56,6 @@ def search_policy_coverage(query: str) -> str:
                 fields="content_vector"
             )
         ],
-        # Filter to prioritize general policy and formulary
-        # These contain coverage details, costs, and limits
         filter="source_file eq 'policy_general.txt' "
                "or source_file eq 'drug_formulary.txt'",
         select=["content", "source_file", "chunk_number"],
@@ -83,15 +63,14 @@ def search_policy_coverage(query: str) -> str:
     )
 
     chunks = []
-    for i, result in enumerate(results):
+    scores = []
+    for result in results:
         chunks.append(
-            f"[Source: {result['source_file']}, "
-            f"section {result['chunk_number']}]\n"
-            f"{result['content']}"
+            f"[Source: {result['source_file']}]\n{result['content']}"
         )
+        scores.append(round(result.get('@search.score', 0), 3))
 
     if not chunks:
-        # No filter match — search all documents
         results = search_client.search(
             search_text=query,
             vector_queries=[
@@ -104,50 +83,29 @@ def search_policy_coverage(query: str) -> str:
             select=["content", "source_file", "chunk_number"],
             top=3
         )
-        for i, result in enumerate(results):
+        for result in results:
             chunks.append(
-                f"[Source: {result['source_file']}, "
-                f"section {result['chunk_number']}]\n"
-                f"{result['content']}"
+                f"[Source: {result['source_file']}]\n{result['content']}"
             )
+            scores.append(round(result.get('@search.score', 0), 3))
 
-    if not chunks:
-        return "No coverage information found for this query."
-
-    return (
-        f"COVERAGE INFORMATION\n"
-        f"Query: {query}\n"
-        f"Source: Azure AI Search — Policy Documents\n"
-        f"{'='*50}\n\n"
-        + "\n\n---\n\n".join(chunks)
-    )
+    return {
+        "content": "\n\n---\n\n".join(chunks) if chunks
+                   else "No coverage information found.",
+        "rag_scores": scores,
+        "top_score": max(scores) if scores else 0,
+        "source": "Azure AI Search — Policy Documents",
+        "chunks_retrieved": len(chunks)
+    }
 
 
 # ============================================================
 # TOOL 2: Prior Auth Criteria Search
-# Source: Azure AI Search — policy_procedures.txt focus
-# Purpose: Answer "what do I need to submit for approval?"
+# Source: Azure AI Search (filtered)
 # ============================================================
 
-def search_prior_auth_criteria(procedure: str) -> str:
-    """
-    Search for prior authorization and medical necessity criteria.
-
-    Answers questions about:
-    - What documentation is required for approval
-    - Medical necessity criteria that must be met
-    - Step therapy requirements (try X before Y)
-    - Clinical criteria checklist for specific procedures
-    - Appeal process and timelines
-
-    Targets policy_procedures.txt which contains
-    the medical necessity and prior auth sections.
-
-    Different from Tool 1 which answers coverage/cost questions.
-    This tool answers APPROVAL CRITERIA questions — what must be
-    documented and proven before the insurer will approve.
-    """
-    # Build a targeted query focused on prior auth criteria
+def search_prior_auth_criteria(procedure: str) -> dict:
+    """Search for prior authorization and medical necessity criteria."""
     targeted_query = (
         f"prior authorization medical necessity criteria "
         f"documentation requirements {procedure}"
@@ -163,22 +121,20 @@ def search_prior_auth_criteria(procedure: str) -> str:
                 fields="content_vector"
             )
         ],
-        # Target the procedures document specifically
         filter="source_file eq 'policy_procedures.txt'",
         select=["content", "source_file", "chunk_number"],
         top=3
     )
 
     chunks = []
-    for i, result in enumerate(results):
+    scores = []
+    for result in results:
         chunks.append(
-            f"[Source: {result['source_file']}, "
-            f"section {result['chunk_number']}]\n"
-            f"{result['content']}"
+            f"[Source: {result['source_file']}]\n{result['content']}"
         )
+        scores.append(round(result.get('@search.score', 0), 3))
 
     if not chunks:
-        # Fallback — search all docs
         results = search_client.search(
             search_text=targeted_query,
             vector_queries=[
@@ -191,48 +147,29 @@ def search_prior_auth_criteria(procedure: str) -> str:
             select=["content", "source_file", "chunk_number"],
             top=3
         )
-        for i, result in enumerate(results):
+        for result in results:
             chunks.append(
-                f"[Source: {result['source_file']}, "
-                f"section {result['chunk_number']}]\n"
-                f"{result['content']}"
+                f"[Source: {result['source_file']}]\n{result['content']}"
             )
+            scores.append(round(result.get('@search.score', 0), 3))
 
-    if not chunks:
-        return (
-            f"No prior authorization criteria found "
-            f"for {procedure}."
-        )
-
-    return (
-        f"PRIOR AUTHORIZATION CRITERIA\n"
-        f"Procedure: {procedure}\n"
-        f"Source: Azure AI Search — Procedures Policy\n"
-        f"{'='*50}\n\n"
-        + "\n\n---\n\n".join(chunks)
-    )
+    return {
+        "content": "\n\n---\n\n".join(chunks) if chunks
+                   else "No prior auth criteria found.",
+        "rag_scores": scores,
+        "top_score": max(scores) if scores else 0,
+        "source": "Azure AI Search — Procedures Policy",
+        "chunks_retrieved": len(chunks)
+    }
 
 
 # ============================================================
 # TOOL 3: FDA Drug Interaction
 # Source: api.fda.gov — LIVE EXTERNAL API
-# Purpose: Real FDA drug label interaction data
 # ============================================================
 
-def check_drug_interaction_fda(drug1: str, drug2: str) -> str:
-    """
-    Fetch real drug interaction data from FDA openFDA API.
-
-    Data source: Official FDA drug prescribing labels.
-    Contains the drug_interactions section that pharmacists
-    and doctors use when prescribing. Updated by FDA directly.
-
-    This is a LIVE external API call — not from our documents.
-    Returns authoritative FDA data, not synthetic policy text.
-
-    Includes timeout handling and fallback to local search
-    if FDA API is unavailable.
-    """
+def check_drug_interaction_fda(drug1: str, drug2: str) -> dict:
+    """Fetch real drug interaction data from FDA openFDA API."""
     BASE_URL = "https://api.fda.gov/drug/label.json"
     fda_results = {}
 
@@ -241,12 +178,11 @@ def check_drug_interaction_fda(drug1: str, drug2: str) -> str:
             response = requests.get(
                 BASE_URL,
                 params={
-                         "search": f"openfda.generic_name:{drug}",
-                         "limit": 1
-                      },
+                    "search": f"openfda.generic_name:{drug}",
+                    "limit": 1
+                },
                 timeout=10
             )
-
             if response.status_code == 200:
                 data = response.json()
                 if data.get("results"):
@@ -259,200 +195,279 @@ def check_drug_interaction_fda(drug1: str, drug2: str) -> str:
                     fda_results[drug] = None
             else:
                 fda_results[drug] = None
-
         except requests.Timeout:
-            return (
-                f"FDA API timeout. "
-                f"Falling back to local knowledge base.\n\n"
-                + search_policy_coverage(
-                    f"drug interaction {drug1} {drug2}"
-                )
-            )
+            fda_results[drug] = None
         except requests.RequestException:
             fda_results[drug] = None
 
-    # Build output
     output = [
-        f"FDA DRUG INTERACTION REPORT",
-        f"Drugs: {drug1.upper()} + {drug2.upper()}",
+        f"FDA DRUG INTERACTION: {drug1.upper()} + {drug2.upper()}",
         f"Source: openFDA Official Drug Labels (api.fda.gov)",
-        f"Retrieved: {date.today()}",
-        "=" * 60
+        f"Retrieved: {date.today()}"
     ]
 
-    # Drug1 label
-    if fda_results.get(drug1):
-        text = fda_results[drug1]
-        output.append(f"\n{drug1.upper()} — Interactions Section:")
-
-        # Find sentences mentioning drug2
-        drug2_lower = drug2.lower()
-        if drug2_lower in text.lower():
-            sentences = text.split(".")
-            relevant = [
-                s.strip() for s in sentences
-                if drug2_lower in s.lower()
-                and len(s.strip()) > 20
-            ]
-            if relevant:
-                output.append(
-                    f"Mentions of {drug2}: "
-                    + ". ".join(relevant[:3]) + "."
-                )
-
-        output.append(f"\nFull section (first 500 chars):")
-        output.append(text[:500] + "...")
-    else:
-        output.append(
-            f"\n{drug1.upper()}: No FDA label found. "
-            f"Try exact generic name."
-        )
-
-    # Drug2 label
-    if fda_results.get(drug2):
-        text = fda_results[drug2]
-        output.append(f"\n{drug2.upper()} — Interactions Section:")
-
-        drug1_lower = drug1.lower()
-        if drug1_lower in text.lower():
-            sentences = text.split(".")
-            relevant = [
-                s.strip() for s in sentences
-                if drug1_lower in s.lower()
-                and len(s.strip()) > 20
-            ]
-            if relevant:
-                output.append(
-                    f"Mentions of {drug1}: "
-                    + ". ".join(relevant[:3]) + "."
-                )
-
-        output.append(f"\nFull section (first 500 chars):")
-        output.append(text[:500] + "...")
-    else:
-        output.append(
-            f"\n{drug2.upper()}: No FDA label found."
-        )
+    for drug, text in fda_results.items():
+        if text:
+            output.append(f"\n{drug.upper()} interactions (first 600 chars):")
+            output.append(text[:600] + "...")
+        else:
+            output.append(f"\n{drug.upper()}: No FDA label found.")
 
     output.append(
-        "\n⚠ DISCLAIMER: openFDA data is for informational "
-        "purposes only. Always verify with a licensed pharmacist "
-        "or physician before clinical decisions."
+        "\n⚠ DISCLAIMER: Always verify with a licensed pharmacist."
     )
 
-    return "\n".join(output)
+    return {
+        "content": "\n".join(output),
+        "source": "openFDA API (api.fda.gov)",
+        "drugs_found": [d for d, v in fda_results.items() if v],
+        "api_calls": 2
+    }
 
 
 # ============================================================
-# TOOL 4: CMS Medicare Coverage Data
+# TOOL 4: CMS Medicare Data
 # Source: data.cms.gov — LIVE EXTERNAL API
-# Purpose: Real Medicare coverage and ACO data from CMS
 # ============================================================
 
-def get_cms_coverage_data(query: str) -> str:
-    """
-    Fetch real Medicare coverage data from CMS data API.
-
-    Data source: Centers for Medicare & Medicaid Services (CMS)
-    data.cms.gov — official government healthcare data.
-
-    Returns real ACO (Accountable Care Organization) data,
-    Medicare coverage policies, and payment information.
-
-    This is completely different from our synthetic documents —
-    it is real US government Medicare data updated by CMS.
-
-    Use cases:
-    - Medicare coverage questions
-    - ACO and value-based care questions
-    - Medicare payment and reimbursement questions
-    """
+def get_cms_coverage_data(query: str) -> dict:
+    """Fetch real Medicare coverage data from CMS API."""
     CMS_BASE = "https://data.cms.gov/data-api/v1/dataset"
-
-    # ACO Participant dataset — real Medicare ACO data
-    ACO_DATASET = (
-        "9767cb68-8ea9-4f0b-8179-9431abc89f11"
-    )
+    ACO_DATASET = "9767cb68-8ea9-4f0b-8179-9431abc89f11"
 
     output = [
         f"CMS MEDICARE DATA",
         f"Query: {query}",
-        f"Source: data.cms.gov — Official CMS Database",
-        f"Retrieved: {date.today()}",
-        "=" * 60
+        f"Source: data.cms.gov",
+        f"Retrieved: {date.today()}"
     ]
 
     try:
-        # Search CMS ACO dataset
         response = requests.get(
             f"{CMS_BASE}/{ACO_DATASET}/data",
+            params={"size": 3, "keyword": query},
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            if isinstance(data, list) and len(data) > 0:
+                output.append(f"\nFound {len(data)} CMS records:")
+                for i, record in enumerate(data[:3]):
+                    output.append(f"\nRecord {i+1}:")
+                    for field in ["ACO_Name", "ACO_Service_Area",
+                                  "Current_Start_Date"]:
+                        if field in record and record[field]:
+                            output.append(
+                                f"  {field.replace('_', ' ')}: "
+                                f"{record[field]}"
+                            )
+            else:
+                output.append("\nNo CMS records found.")
+        else:
+            output.append(f"\nCMS API returned {response.status_code}")
+
+    except requests.Timeout:
+        output.append("\nCMS API timeout.")
+    except requests.RequestException as e:
+        output.append(f"\nCMS API error: {str(e)}")
+
+    return {
+        "content": "\n".join(output),
+        "source": "CMS data.gov API",
+        "api_calls": 1
+    }
+
+
+# ============================================================
+# TOOL 5: Find Doctors — NPI Registry
+# Source: npiregistry.cms.hhs.gov — LIVE EXTERNAL API
+# ============================================================
+
+def find_doctors_npi(
+    specialty: str,
+    state: str = "TX",
+    limit: int = 2
+) -> dict:
+    """
+    Find real licensed doctors from the NPI Registry.
+    NPI = National Provider Identifier
+    Every licensed US doctor/hospital has one.
+    Source: official CMS NPI Registry — completely free, no key needed.
+    """
+    NPI_URL = "https://npiregistry.cms.hhs.gov/api/"
+
+    # Map common symptoms/conditions to taxonomy codes
+    SPECIALTY_MAP = {
+        "general": "207Q00000X",      # Family Medicine
+        "fever": "207Q00000X",         # Family Medicine
+        "headache": "2084N0400X",      # Neurology
+        "heart": "207RC0000X",         # Cardiology
+        "chest pain": "207RC0000X",    # Cardiology
+        "diabetes": "207RE0101X",      # Endocrinology
+        "skin": "207N00000X",          # Dermatology
+        "mental": "2084P0800X",        # Psychiatry
+        "bone": "207X00000X",          # Orthopedic Surgery
+        "knee": "207X00000X",          # Orthopedic Surgery
+        "stomach": "207RG0100X",       # Gastroenterology
+        "lung": "207RP1001X",          # Pulmonology
+        "eye": "207W00000X",           # Ophthalmology
+        "child": "208000000X",         # Pediatrics
+        "women": "207V00000X",         # OB/GYN
+        "cancer": "207RX0202X",        # Oncology
+    }
+
+    # Find best matching taxonomy
+    taxonomy = "207Q00000X"  # default: Family Medicine
+    specialty_lower = specialty.lower()
+    for key, code in SPECIALTY_MAP.items():
+        if key in specialty_lower:
+            taxonomy = code
+            break
+
+    try:
+        response = requests.get(
+            NPI_URL,
             params={
-                "size": 3,
-                "keyword": query
+                "version": "2.1",
+                "taxonomy_description": "",
+                "state": state,
+                "limit": limit,
+                "enumeration_type": "NPI-1",  # Individual providers only
+                "taxonomy_code": taxonomy,
+                "skip": 0
             },
             timeout=10
         )
 
         if response.status_code == 200:
             data = response.json()
+            results = data.get("results", [])
 
-            if isinstance(data, list) and len(data) > 0:
-                output.append(
-                    f"\nFound {len(data)} CMS records:\n"
+            if not results:
+                # Try without taxonomy filter
+                response2 = requests.get(
+                    NPI_URL,
+                    params={
+                        "version": "2.1",
+                        "state": state,
+                        "limit": limit,
+                        "enumeration_type": "NPI-1",
+                        "skip": 0
+                    },
+                    timeout=10
                 )
-                for i, record in enumerate(data[:3]):
-                    output.append(f"Record {i+1}:")
+                if response2.status_code == 200:
+                    results = response2.json().get("results", [])
 
-                    # Extract most relevant fields
-                    relevant_fields = [
-                        "ACO_Name", "ACO_Service_Area",
-                        "ACO_Public_Name", "Par_LBN",
-                        "Agreement_Period_Num",
-                        "Current_Start_Date",
-                        "ENHANCED_Track", "High_Revenue_ACO",
-                        "Low_Revenue_ACO"
-                    ]
+            doctors = []
+            for r in results[:limit]:
+                basic = r.get("basic", {})
+                addresses = r.get("addresses", [{}])
+                taxonomies = r.get("taxonomies", [{}])
 
-                    for field in relevant_fields:
-                        if field in record and record[field]:
-                            # Make field name readable
-                            readable = field.replace("_", " ")
-                            output.append(
-                                f"  {readable}: {record[field]}"
-                            )
-                    output.append("")
+                name = f"Dr. {basic.get('first_name', '')} " \
+                       f"{basic.get('last_name', '')}"
+                specialty_desc = taxonomies[0].get(
+                    "desc", "General Practice"
+                ) if taxonomies else "General Practice"
+                city = addresses[0].get("city", "") if addresses else ""
+                state_addr = addresses[0].get(
+                    "state", state
+                ) if addresses else state
+                npi_number = r.get("number", "")
 
+                npi_link = (
+                    f"https://npiregistry.cms.hhs.gov/provider-view/"
+                    f"{npi_number}"
+                )
+
+                doctors.append({
+                    "name": name.strip(),
+                    "specialty": specialty_desc,
+                    "location": f"{city}, {state_addr}",
+                    "npi": npi_number,
+                    "link": npi_link,
+                    "reason": f"Licensed {specialty_desc} specialist "
+                              f"in {city or state_addr}"
+                })
+
+            if doctors:
+                return {
+                    "content": format_doctors(doctors, specialty),
+                    "doctors": doctors,
+                    "source": "NPI Registry (npiregistry.cms.hhs.gov)",
+                    "total_found": len(doctors),
+                    "api_calls": 1
+                }
             else:
-                output.append(
-                    "\nNo CMS records found for this query. "
-                    "Try broader search terms like "
-                    "'Medicare' or state abbreviation."
-                )
+                return {
+                    "content": (
+                        "No doctors found in NPI Registry for this "
+                        f"specialty in {state}. "
+                        "Please search healthgrades.com or zocdoc.com."
+                    ),
+                    "doctors": [],
+                    "source": "NPI Registry",
+                    "total_found": 0,
+                    "api_calls": 1
+                }
 
-        elif response.status_code == 404:
-            output.append("\nCMS dataset not available.")
         else:
-            output.append(
-                f"\nCMS API returned status {response.status_code}"
-            )
+            return {
+                "content": "NPI Registry unavailable. "
+                           "Please try healthgrades.com",
+                "doctors": [],
+                "source": "NPI Registry",
+                "total_found": 0,
+                "api_calls": 1
+            }
 
     except requests.Timeout:
-        output.append(
-            "\nCMS API timeout. "
-            "Try again or check data.cms.gov directly."
-        )
+        return {
+            "content": "NPI Registry timeout. Try zocdoc.com",
+            "doctors": [],
+            "source": "NPI Registry",
+            "total_found": 0,
+            "api_calls": 0
+        }
     except requests.RequestException as e:
-        output.append(f"\nCMS API error: {str(e)}")
+        return {
+            "content": f"NPI Registry error: {str(e)}",
+            "doctors": [],
+            "source": "NPI Registry",
+            "total_found": 0,
+            "api_calls": 0
+        }
 
-    output.append(
-        "\nFor full CMS data visit: https://data.cms.gov"
+
+def format_doctors(doctors: list, condition: str) -> str:
+    """Format doctor results for display."""
+    lines = [
+        f"RECOMMENDED DOCTORS for: {condition}",
+        f"Source: NPI Registry (Official CMS Database)",
+        f"All providers are licensed and verified by CMS.",
+        ""
+    ]
+
+    for i, doc in enumerate(doctors, 1):
+        lines.append(f"Doctor {i}: {doc['name']}")
+        lines.append(f"  Specialty: {doc['specialty']}")
+        lines.append(f"  Location: {doc['location']}")
+        lines.append(f"  Why recommended: {doc['reason']}")
+        lines.append(f"  NPI Profile: {doc['link']}")
+        lines.append("")
+
+    lines.append(
+        "⚠ IMPORTANT: Always call the doctor's office to confirm "
+        "availability and that they accept your insurance before visiting."
     )
 
-    return "\n".join(output)
+    return "\n".join(lines)
 
 
 # ============================================================
-# Tool definitions — JSON schema GPT-4o reads
+# Tool definitions for GPT-4o
 # ============================================================
 
 TOOL_DEFINITIONS = [
@@ -461,21 +476,17 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "search_policy_coverage",
             "description": (
-                "Search insurance policy documents to answer "
-                "coverage questions: what is covered, copay amounts, "
-                "deductibles, visit limits, in/out of network costs. "
-                "Use for: 'Is X covered?', 'How much is my copay?', "
-                "'What is my deductible?', 'How many PT visits?'"
+                "Search insurance policy documents for coverage, "
+                "copay, deductible, and benefits information. "
+                "Use for: 'Is X covered?', 'What is my copay?', "
+                "'What is my deductible?'"
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": (
-                            "Coverage question to search. "
-                            "Example: 'physical therapy copay coverage'"
-                        )
+                        "description": "Coverage question to search"
                     }
                 },
                 "required": ["query"]
@@ -488,21 +499,16 @@ TOOL_DEFINITIONS = [
             "name": "search_prior_auth_criteria",
             "description": (
                 "Search for prior authorization requirements and "
-                "medical necessity criteria for a specific procedure. "
-                "Use for: 'What do I need to submit for prior auth?', "
-                "'What are the approval criteria for X?', "
-                "'What documentation is needed for knee replacement?'"
+                "medical necessity criteria for a procedure. "
+                "Use for: 'What do I need for prior auth?', "
+                "'What are the criteria for approval?'"
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "procedure": {
                         "type": "string",
-                        "description": (
-                            "Procedure name or CPT code. "
-                            "Example: 'total knee replacement' "
-                            "or 'physical therapy'"
-                        )
+                        "description": "Procedure name or CPT code"
                     }
                 },
                 "required": ["procedure"]
@@ -515,10 +521,8 @@ TOOL_DEFINITIONS = [
             "name": "check_drug_interaction_fda",
             "description": (
                 "Get REAL drug interaction data from FDA official "
-                "drug prescribing labels via openFDA API. "
-                "Use for any drug interaction or medication safety "
-                "question. Returns authoritative FDA data, "
-                "not synthetic documents."
+                "drug labels. Use for drug interaction or medication "
+                "safety questions."
             ),
             "parameters": {
                 "type": "object",
@@ -541,35 +545,60 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "get_cms_coverage_data",
             "description": (
-                "Get real Medicare and Medicaid coverage data "
-                "from CMS (Centers for Medicare & Medicaid Services) "
-                "official database. Use for Medicare coverage "
-                "questions, ACO information, and government "
-                "healthcare program questions."
+                "Get real Medicare and Medicaid coverage data from "
+                "CMS official database. Use for Medicare questions."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": (
-                            "Medicare/CMS search query. "
-                            "Example: 'Medicare knee replacement' "
-                            "or 'ACO Texas'"
-                        )
+                        "description": "Medicare/CMS search query"
                     }
                 },
                 "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_doctors_npi",
+            "description": (
+                "Find real licensed doctors from the official NPI "
+                "Registry (National Provider Identifier database). "
+                "Use when user has health symptoms and needs to see "
+                "a doctor. Returns verified licensed providers with "
+                "their NPI profile links."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "specialty": {
+                        "type": "string",
+                        "description": (
+                            "Medical specialty or symptom/condition. "
+                            "Examples: 'fever', 'headache', 'knee pain', "
+                            "'diabetes', 'heart', 'general'"
+                        )
+                    },
+                    "state": {
+                        "type": "string",
+                        "description": (
+                            "US state abbreviation. Default: TX"
+                        ),
+                        "default": "TX"
+                    }
+                },
+                "required": ["specialty"]
             }
         }
     }
 ]
 
 
-def execute_tool(tool_name: str, tool_args: dict) -> str:
-    """
-    Dispatch tool calls from GPT-4o to actual functions.
-    """
+def execute_tool(tool_name: str, tool_args: dict) -> dict:
+    """Dispatch tool calls from GPT-4o to actual functions."""
     if tool_name == "search_policy_coverage":
         return search_policy_coverage(**tool_args)
     elif tool_name == "search_prior_auth_criteria":
@@ -578,38 +607,7 @@ def execute_tool(tool_name: str, tool_args: dict) -> str:
         return check_drug_interaction_fda(**tool_args)
     elif tool_name == "get_cms_coverage_data":
         return get_cms_coverage_data(**tool_args)
+    elif tool_name == "find_doctors_npi":
+        return find_doctors_npi(**tool_args)
     else:
-        return f"Unknown tool: {tool_name}"
-
-
-# ============================================================
-# Test all 4 tools
-# ============================================================
-
-if __name__ == "__main__":
-    print("=== TOOLS TEST — 4 different data sources ===\n")
-
-    print("TOOL 1: Policy coverage (Azure AI Search)")
-    print("-" * 50)
-    result = search_policy_coverage(
-        "physical therapy copay and visit limit"
-    )
-    print(result[:400])
-    print()
-
-    print("TOOL 2: Prior auth criteria (Azure AI Search filtered)")
-    print("-" * 50)
-    result = search_prior_auth_criteria("total knee replacement")
-    print(result[:400])
-    print()
-
-    print("TOOL 3: FDA drug interaction (live api.fda.gov)")
-    print("-" * 50)
-    result = check_drug_interaction_fda("metformin", "lisinopril")
-    print(result[:600])
-    print()
-
-    print("TOOL 4: CMS Medicare data (live data.cms.gov)")
-    print("-" * 50)
-    result = get_cms_coverage_data("Medicare Texas")
-    print(result[:400])
+        return {"content": f"Unknown tool: {tool_name}", "source": "none"}
