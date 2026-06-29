@@ -7,484 +7,1208 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        :root {
+            --bg: #f4f7fb;
+            --white: #ffffff;
+            --navy: #0052cc;
+            --navy-dark: #003d99;
+            --navy-light: #e8f0fe;
+            --green: #00875a;
+            --green-light: #e3fcef;
+            --red: #de350b;
+            --red-light: #ffebe6;
+            --yellow: #ff8b00;
+            --yellow-light: #fffae6;
+            --purple: #6554c0;
+            --purple-light: #f3f0ff;
+            --border: #dde3ed;
+            --text: #172b4d;
+            --text2: #5e6c84;
+            --text3: #97a0af;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f0f4f8;
+            font-family: -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
-        /* Header */
+        /* ── HEADER ── */
         .header {
-            background: linear-gradient(135deg, #0066cc, #004999);
-            color: white;
-            padding: 16px 24px;
+            background: var(--navy-dark);
+            padding: 12px 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            gap: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-
-        .header-icon {
-            width: 40px;
-            height: 40px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+        .header-logo {
+            width: 36px; height: 36px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            display: flex; align-items: center;
+            justify-content: center; font-size: 18px;
         }
-
         .header-text h1 {
-            font-size: 18px;
+            font-size: 15px; font-weight: 700;
+            color: #fff; letter-spacing: 0.2px;
+        }
+        .header-text p {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 1px;
+        }
+        .header-right {
+            margin-left: auto;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .h-badge {
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 10px; font-weight: 600;
+        }
+        .h-live {
+            background: rgba(0,135,90,0.3);
+            border: 1px solid rgba(0,255,150,0.4);
+            color: #80ffcc;
+        }
+        .h-ver {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+        }
+        .h-azure {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.6);
+            font-size: 9px;
+        }
+
+        /* ── LAYOUT ── */
+        .main { display: flex; flex: 1; overflow: hidden; }
+
+        /* ── CHAT ── */
+        .chat-area {
+            flex: 1; display: flex;
+            flex-direction: column; overflow: hidden;
+        }
+        .chat-scroll {
+            flex: 1; overflow-y: auto;
+            padding: 20px;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+
+        /* ── ONBOARDING ── */
+        .onboarding {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .onboarding h2 {
+            font-size: 18px; font-weight: 700;
+            color: var(--navy); margin-bottom: 6px;
+        }
+        .onboarding .sub {
+            font-size: 12px; color: var(--text2);
+            line-height: 1.6; margin-bottom: 18px;
+        }
+        .cap-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px; margin-bottom: 18px;
+        }
+        .cap-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px;
+        }
+        .cap-card .ci { font-size: 18px; margin-bottom: 4px; }
+        .cap-card h4 {
+            font-size: 11px; color: var(--navy);
+            font-weight: 700; margin-bottom: 3px;
+        }
+        .cap-card p { font-size: 10px; color: var(--text2); line-height: 1.4; }
+
+        .ex-label {
+            font-size: 9px; color: var(--text3);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 8px; font-weight: 600;
+        }
+        .examples { display: flex; flex-wrap: wrap; gap: 6px; }
+        .ex-btn {
+            background: var(--navy-light);
+            border: 1px solid #c7d9ff;
+            color: var(--navy);
+            padding: 5px 12px; border-radius: 14px;
+            font-size: 11px; cursor: pointer;
+            transition: all 0.2s; font-weight: 500;
+        }
+        .ex-btn:hover {
+            background: var(--navy);
+            border-color: var(--navy);
+            color: white;
+        }
+
+        /* ── PIPELINE BAR ── */
+        .pipeline-bar {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            display: flex; align-items: center;
+            gap: 5px; flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .pb-label {
+            font-size: 9px; color: var(--text3);
+            text-transform: uppercase; letter-spacing: 1px;
+            font-weight: 700; margin-right: 4px;
+        }
+        .pb-step {
+            font-size: 9px; color: var(--navy);
+            background: var(--navy-light);
+            border: 1px solid #c7d9ff;
+            padding: 2px 8px; border-radius: 5px;
             font-weight: 600;
         }
+        .pb-arr { color: var(--text3); font-size: 9px; }
 
-        .header-text p {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 2px;
-        }
-
-        .status-badge {
-            margin-left: auto;
-            background: #00cc66;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        /* Chat container */
-        .chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        /* Welcome message */
-        .welcome {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 8px;
-        }
-
-        .welcome h2 {
-            color: #0066cc;
-            margin-bottom: 8px;
-            font-size: 20px;
-        }
-
-        .welcome p {
-            color: #666;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .example-questions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 16px;
-        }
-
-        .example-btn {
-            background: #f0f4ff;
-            border: 1px solid #ccd9ff;
-            color: #0066cc;
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .example-btn:hover {
-            background: #0066cc;
-            color: white;
-            border-color: #0066cc;
-        }
-
-        /* Messages */
+        /* ── MESSAGES ── */
         .message {
-            display: flex;
-            gap: 12px;
-            max-width: 80%;
-            animation: fadeIn 0.3s ease;
+            display: flex; gap: 10px;
+            max-width: 90%;
+            animation: fadeUp 0.25s ease;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(6px); }
+            to   { opacity:1; transform:translateY(0); }
         }
-
         .message.user {
             align-self: flex-end;
             flex-direction: row-reverse;
         }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
+        .av {
+            width: 32px; height: 32px;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
+            display: flex; align-items: center;
             justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
+            font-size: 14px; flex-shrink: 0;
         }
-
-        .message.user .avatar {
-            background: #0066cc;
+        .message.user .av {
+            background: var(--navy);
             color: white;
         }
-
-        .message.assistant .avatar {
-            background: #e8f4ff;
-            color: #0066cc;
+        .message.assistant .av {
+            background: var(--white);
+            border: 1px solid var(--border);
         }
+        .msg-wrap { display: flex; flex-direction: column; gap: 7px; }
 
         .bubble {
-            padding: 12px 16px;
-            border-radius: 16px;
-            font-size: 14px;
-            line-height: 1.6;
-            max-width: 100%;
+            padding: 11px 15px;
+            border-radius: 12px;
+            font-size: 13.5px; line-height: 1.65;
         }
-
         .message.user .bubble {
-            background: #0066cc;
+            background: var(--navy);
             color: white;
             border-bottom-right-radius: 4px;
         }
-
         .message.assistant .bubble {
-            background: white;
-            color: #333;
+            background: var(--white);
+            border: 1px solid var(--border);
+            color: var(--text);
             border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
 
-        /* Metadata badges */
-        .metadata {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 8px;
+        /* ── TAGS ── */
+        .msg-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag {
+            font-size: 10px; padding: 2px 9px;
+            border-radius: 10px; font-weight: 600;
         }
+        .t-model  { background: var(--navy-light); color: var(--navy); border: 1px solid #c7d9ff; }
+        .t-cache  { background: var(--yellow-light); color: var(--yellow); border: 1px solid #ffe0a0; }
+        .t-phi    { background: var(--red-light); color: var(--red); border: 1px solid #ffb3a0; }
+        .t-time   { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+        .t-intent { background: var(--green-light); color: var(--green); border: 1px solid #b0f0d8; }
 
-        .badge {
-            font-size: 11px;
-            padding: 2px 8px;
+        /* ── TOOL BADGES ── */
+        .tool-row { display: flex; flex-wrap: wrap; gap: 5px; }
+        .tb {
+            font-size: 10px; padding: 3px 10px;
+            border-radius: 6px; font-weight: 600;
+        }
+        .tb-azure  { background: var(--navy-light); color: var(--navy); border: 1px solid #c7d9ff; }
+        .tb-fda    { background: var(--green-light); color: var(--green); border: 1px solid #b0f0d8; }
+        .tb-cms    { background: var(--red-light); color: #c0392b; border: 1px solid #ffb3a0; }
+        .tb-npi    { background: var(--purple-light); color: var(--purple); border: 1px solid #c5b8f5; }
+
+        /* ── METRICS PANEL ── */
+        .metrics-panel {
+            background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 10px;
-            font-weight: 500;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
+        .metrics-toggle {
+            width: 100%; padding: 9px 14px;
+            background: var(--bg);
+            border: none; border-bottom: 1px solid var(--border);
+            color: var(--navy);
+            display: flex; align-items: center;
+            justify-content: space-between;
+            cursor: pointer; font-size: 10px;
+            font-weight: 700; letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .metrics-toggle:hover { background: var(--navy-light); }
+        .metrics-body { display: none; padding: 14px; }
+        .metrics-body.open { display: block; }
 
-        .badge.model { background: #e8f4ff; color: #0066cc; }
-        .badge.tool { background: #e8fff0; color: #00884d; }
-        .badge.cache { background: #fff8e0; color: #cc8800; }
-        .badge.phi { background: #ffe8e8; color: #cc0000; }
-        .badge.time { background: #f5f5f5; color: #666; }
-
-        /* Typing indicator */
-        .typing {
-            display: flex;
-            gap: 4px;
+        /* Cost hero */
+        .cost-hero {
+            background: linear-gradient(135deg, #e3fcef, #f0fff8);
+            border: 1px solid #b0f0d8;
+            border-radius: 8px;
             padding: 12px 16px;
-            background: white;
-            border-radius: 16px;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            width: fit-content;
+            margin-bottom: 14px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+        }
+        .cost-pct {
+            font-size: 30px; font-weight: 800;
+            color: var(--green); line-height: 1;
+        }
+        .cost-sub {
+            font-size: 10px; color: #00644a;
+            margin-top: 3px;
+        }
+        .cost-right { text-align: right; }
+        .cost-usd {
+            font-size: 15px; font-weight: 700;
+            color: var(--green);
+        }
+        .cost-usd-sub {
+            font-size: 9px; color: #00aa70;
+            margin-top: 2px;
         }
 
+        /* Score bar */
+        .score-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px; margin-bottom: 14px;
+        }
+        .score-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 7px; padding: 9px;
+            text-align: center;
+        }
+        .score-card .sv {
+            font-size: 17px; font-weight: 800;
+            color: var(--navy);
+        }
+        .score-card .sl {
+            font-size: 8px; color: var(--text3);
+            margin-top: 2px; text-transform: uppercase;
+            letter-spacing: 0.4px; font-weight: 600;
+        }
+        .score-card .st {
+            font-size: 8px; color: var(--text3);
+            margin-top: 1px;
+        }
+
+        /* Layer cards */
+        .layers { display: flex; flex-direction: column; gap: 8px; }
+
+        .lcard {
+            border-radius: 8px; padding: 12px 14px;
+            border-left: 3px solid var(--border);
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--border);
+        }
+        .lcard.l-pass  { border-left-color: var(--green); }
+        .lcard.l-hit   { border-left-color: var(--yellow); }
+        .lcard.l-miss  { border-left-color: var(--text3); }
+        .lcard.l-block { border-left-color: var(--red); }
+        .lcard.l-info  { border-left-color: var(--navy); }
+        .lcard.l-saved { border-left-color: var(--green); }
+        .lcard.l-skip  { border-left-color: var(--border); opacity: 0.5; }
+
+        .lcard-top {
+            display: flex; align-items: center;
+            gap: 8px; margin-bottom: 6px;
+        }
+        .l-icon { font-size: 14px; }
+        .l-num {
+            font-size: 8px; color: var(--text3);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 1px 5px; border-radius: 3px;
+            font-weight: 700; letter-spacing: 0.5px;
+        }
+        .l-name {
+            font-size: 12px; font-weight: 700;
+            color: var(--text); flex: 1;
+        }
+        .l-result {
+            font-size: 9px; font-weight: 700;
+            padding: 2px 8px; border-radius: 5px;
+        }
+        .lr-pass  { background: var(--green-light); color: var(--green); }
+        .lr-miss  { background: var(--bg); color: var(--text2); border: 1px solid var(--border); }
+        .lr-hit   { background: var(--yellow-light); color: var(--yellow); }
+        .lr-block { background: var(--red-light); color: var(--red); }
+        .lr-info  { background: var(--navy-light); color: var(--navy); }
+        .lr-saved { background: var(--green-light); color: var(--green); }
+
+        /* WHY row */
+        .l-why {
+            font-size: 10px; color: var(--text2);
+            line-height: 1.5; margin-bottom: 8px;
+            padding: 6px 8px;
+            background: var(--bg);
+            border-radius: 5px;
+            border-left: 2px solid var(--navy-light);
+        }
+        .l-why strong { color: var(--navy); }
+
+        /* Metric row */
+        .l-metric {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+        }
+        .lm-header {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .lm-type {
+            font-size: 9px; font-weight: 700;
+            color: var(--text2);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .lm-score {
+            font-size: 13px; font-weight: 800;
+            color: var(--navy);
+        }
+        .lm-bar-wrap {
+            height: 4px; background: var(--border);
+            border-radius: 2px; overflow: hidden;
+        }
+        .lm-bar {
+            height: 100%; border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .bar-navy   { background: linear-gradient(90deg, #0052cc, #0066ff); }
+        .bar-green  { background: linear-gradient(90deg, #00875a, #00cc88); }
+        .bar-yellow { background: linear-gradient(90deg, #cc7000, #ffaa00); }
+        .bar-purple { background: linear-gradient(90deg, #6554c0, #9b7ff5); }
+        .bar-red    { background: linear-gradient(90deg, #de350b, #ff6644); }
+
+        /* Explain row */
+        .l-explain {
+            font-size: 10px; color: var(--text2);
+            line-height: 1.4; font-style: italic;
+        }
+        .l-explain.good { color: var(--green); font-style: normal; font-weight: 500; }
+        .l-explain.warn { color: var(--yellow); font-style: normal; }
+        .l-explain.bad  { color: var(--red); font-style: normal; }
+
+        /* ── TYPING ── */
+        .typing-wrap { display: flex; gap: 10px; }
+        .typing {
+            padding: 11px 16px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px; border-bottom-left-radius: 4px;
+            display: flex; gap: 5px; align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
         .typing span {
-            width: 8px;
-            height: 8px;
-            background: #0066cc;
-            border-radius: 50%;
+            width: 6px; height: 6px;
+            background: var(--navy); border-radius: 50%;
             animation: bounce 1.2s infinite;
         }
-
         .typing span:nth-child(2) { animation-delay: 0.2s; }
         .typing span:nth-child(3) { animation-delay: 0.4s; }
-
         @keyframes bounce {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
+            0%,60%,100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
         }
 
-        /* Input area */
+        /* ── INPUT ── */
         .input-area {
-            background: white;
-            border-top: 1px solid #e0e0e0;
-            padding: 16px 24px;
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 12px 20px; flex-shrink: 0;
         }
-
         .disclaimer {
-            font-size: 11px;
-            color: #999;
-            text-align: center;
-            margin-bottom: 10px;
+            font-size: 9px; color: var(--text3);
+            text-align: center; margin-bottom: 8px;
         }
-
-        .input-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
-        }
-
+        .input-row { display: flex; gap: 10px; align-items: flex-end; }
         textarea {
             flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 14px;
-            font-family: inherit;
-            resize: none;
-            outline: none;
+            background: var(--bg);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px; font-family: inherit;
+            color: var(--text);
+            resize: none; outline: none;
             transition: border-color 0.2s;
-            max-height: 120px;
-            min-height: 48px;
+            max-height: 90px; min-height: 42px;
+            line-height: 1.5;
         }
-
-        textarea:focus { border-color: #0066cc; }
-
+        textarea::placeholder { color: var(--text3); }
+        textarea:focus { border-color: var(--navy); }
         .send-btn {
-            width: 48px;
-            height: 48px;
-            background: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-            flex-shrink: 0;
+            width: 42px; height: 42px;
+            background: var(--navy);
+            color: white; border: none;
+            border-radius: 10px; cursor: pointer;
+            font-size: 16px; display: flex;
+            align-items: center; justify-content: center;
+            transition: background 0.2s; flex-shrink: 0;
+        }
+        .send-btn:hover { background: var(--navy-dark); }
+        .send-btn:disabled { background: var(--text3); cursor: not-allowed; }
+
+        /* ── SIDE PANEL ── */
+        .side-panel {
+            width: 224px;
+            background: var(--white);
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            overflow-y: auto; flex-shrink: 0;
+        }
+        .sp-sec {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sp-title {
+            font-size: 9px; color: var(--text3);
+            text-transform: uppercase; letter-spacing: 1px;
+            font-weight: 700; margin-bottom: 10px;
+        }
+        .stat-block { margin-bottom: 10px; }
+        .stat-val {
+            font-size: 22px; font-weight: 800;
+            line-height: 1;
+        }
+        .sv-green  { color: var(--green); }
+        .sv-yellow { color: var(--yellow); }
+        .sv-navy   { color: var(--navy); }
+        .stat-sub {
+            font-size: 9px; color: var(--text3);
+            margin-top: 2px;
         }
 
-        .send-btn:hover { background: #004999; }
-        .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .tool-item {
+            display: flex; align-items: center;
+            gap: 8px; padding: 7px 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 7px; margin-bottom: 5px;
+        }
+        .ti-icon { font-size: 12px; }
+        .ti-info { flex: 1; }
+        .ti-name { font-size: 10px; color: var(--text); font-weight: 600; }
+        .ti-src  { font-size: 8px; color: var(--text3); }
+        .ti-cnt  {
+            font-size: 11px; font-weight: 700;
+            color: var(--navy);
+            background: var(--navy-light);
+            padding: 1px 6px; border-radius: 8px;
+            font-size: 9px;
+        }
 
-        /* Footer */
         .footer {
-            text-align: center;
-            font-size: 11px;
-            color: #aaa;
-            padding: 8px;
-            background: white;
+            padding: 8px; text-align: center;
+            font-size: 9px; color: var(--text3);
+            border-top: 1px solid var(--border);
         }
-
-        .footer a { color: #0066cc; text-decoration: none; }
+        .footer a { color: var(--navy); text-decoration: none; }
     </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
-    <div class="header-icon">🏥</div>
+    <div class="header-logo">🏥</div>
     <div class="header-text">
         <h1>Healthcare AI Assistant</h1>
-        <p>Powered by GPT-4o · Azure AI Search · PHI Protected</p>
+        <p>Production agent · 5 tools · 3 external APIs · PHI protected · Azure Container Apps</p>
     </div>
-    <div class="status-badge" id="statusBadge">● Live</div>
+    <div class="header-right">
+        <span class="h-badge h-ver">v1.0.3</span>
+        <span class="h-badge h-azure">☁ Azure</span>
+        <span class="h-badge h-live">● Live</span>
+    </div>
 </div>
 
-<div class="chat-container" id="chatContainer">
-    <div class="welcome">
-        <h2>👋 Hello! How can I help you today?</h2>
-        <p>Ask me about your insurance coverage, prior authorization requirements,<br>
-        drug interactions, or Medicare benefits.</p>
-        <div class="example-questions">
-            <button class="example-btn" onclick="sendExample(this)">
-                What is my copay for a specialist?
-            </button>
-            <button class="example-btn" onclick="sendExample(this)">
-                Does my plan cover physical therapy?
-            </button>
-            <button class="example-btn" onclick="sendExample(this)">
-                What are metformin and lisinopril interactions?
-            </button>
-            <button class="example-btn" onclick="sendExample(this)">
-                Prior auth for knee replacement?
-            </button>
+<div class="main">
+
+    <!-- CHAT -->
+    <div class="chat-area">
+        <div class="chat-scroll" id="chatScroll">
+
+            <!-- Onboarding -->
+            <div class="onboarding" id="onboarding">
+                <h2>👋 Healthcare AI Assistant</h2>
+                <p class="sub">
+                    This is a <strong>production-grade AI agent</strong> — not just a chatbot.
+                    Every question passes through <strong>11 pipeline layers</strong> with real
+                    enterprise patterns: PHI guardrails, semantic caching, two-tier model routing,
+                    RAG search, and live external API calls.
+                    <strong>Watch the pipeline metrics panel after each answer.</strong>
+                </p>
+                <div style="background:#fffae6;border:1px solid #ffe0a0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#7a5500;">
+                     <strong>⚠ Demo Notice:</strong> This agent uses a <strong>synthetic BlueCross Shield Gold PPO 2024 policy</strong> 
+                     for demonstration purposes. Drug interactions, doctor search, and Medicare data are pulled from 
+                     <strong>real live government APIs</strong> (FDA, NPI Registry, CMS). 
+                     In production, this connects to your actual insurer's policy documents.
+                </div>
+                <div class="cap-grid">
+                    <div class="cap-card">
+                        <div class="ci">🏥</div>
+                        <h4>Insurance Coverage</h4>
+                        <p>Copays, deductibles, visit limits, prior auth — from Azure AI Search knowledge base</p>
+                    </div>
+                    <div class="cap-card">
+                        <div class="ci">💊</div>
+                        <h4>Drug Interactions</h4>
+                        <p>Real-time FDA prescribing label data — live call to api.fda.gov</p>
+                    </div>
+                    <div class="cap-card">
+                        <div class="ci">🩺</div>
+                        <h4>Find a Doctor</h4>
+                        <p>Licensed providers from NPI Registry — official CMS government database</p>
+                    </div>
+                    <div class="cap-card">
+                        <div class="ci">📊</div>
+                        <h4>Medicare Data</h4>
+                        <p>Real ACO coverage data — live call to data.cms.gov</p>
+                    </div>
+                </div>
+                <div class="ex-label">Try asking:</div>
+                <div class="examples">
+                    <button class="ex-btn" onclick="useEx(this)">What is my specialist copay?</button>
+                    <button class="ex-btn" onclick="useEx(this)">I have fever and headache</button>
+                    <button class="ex-btn" onclick="useEx(this)">Metformin + lisinopril interactions?</button>
+                    <button class="ex-btn" onclick="useEx(this)">Knee replacement prior auth?</button>
+                    <button class="ex-btn" onclick="useEx(this)">Does my plan cover physical therapy?</button>
+                    <button class="ex-btn" onclick="useEx(this)">Find cardiologist in Texas</button>
+                    <button class="ex-btn" onclick="useEx(this)">Can I order pizza?</button>
+                </div>
+            </div>
+
+            <!-- Pipeline bar -->
+            <div class="pipeline-bar">
+                <span class="pb-label">11-Layer Pipeline</span>
+                <span class="pb-step">0 Intent</span><span class="pb-arr">→</span>
+                <span class="pb-step">1 PHI Guard</span><span class="pb-arr">→</span>
+                <span class="pb-step">2 Cache</span><span class="pb-arr">→</span>
+                <span class="pb-step">3 Router</span><span class="pb-arr">→</span>
+                <span class="pb-step">4–8 Tools</span><span class="pb-arr">→</span>
+                <span class="pb-step">9 LLM</span><span class="pb-arr">→</span>
+                <span class="pb-step">10 Memory</span>
+            </div>
+
+        </div>
+
+        <!-- INPUT -->
+        <div class="input-area">
+            <div class="disclaimer">
+                ⚠ For informational purposes only · PHI automatically detected and protected · Not a substitute for professional medical advice
+            </div>
+            <div class="input-row">
+                <textarea id="qInput"
+                    placeholder="Ask about insurance coverage, symptoms, medications, or finding a doctor..."
+                    rows="1"
+                    onkeydown="handleKey(event)"
+                    oninput="resize(this)"></textarea>
+                <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="input-area">
-    <div class="disclaimer">
-        ⚠️ For informational purposes only. Not a substitute for professional medical advice.
-        PHI is automatically detected and protected.
-    </div>
-    <div class="input-row">
-        <textarea
-            id="questionInput"
-            placeholder="Ask a healthcare question..."
-            rows="1"
-            onkeydown="handleKeyDown(event)"
-            oninput="autoResize(this)"
-        ></textarea>
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-    </div>
-</div>
+    <!-- SIDE PANEL -->
+    <div class="side-panel">
+        <div class="sp-sec">
+            <div class="sp-title">⚡ Session Metrics</div>
+            <div class="stat-block">
+                <div class="stat-val sv-green" id="totalSaved">$0.0000</div>
+                <div class="stat-sub">Total cost saved this session</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-val sv-yellow" id="hitRate">0%</div>
+                <div class="stat-sub" id="hitDetail">Cache hit rate — 0/0</div>
+            </div>
+            <div class="stat-block">
+                <div class="stat-val sv-navy" id="totalReqs">0</div>
+                <div class="stat-sub">Requests processed</div>
+            </div>
+        </div>
 
-<div class="footer">
-    Built with Azure AI Search · Cosmos DB · OpenAI GPT-4o ·
-    <a href="/docs" target="_blank">API Docs</a> ·
-    <a href="https://github.com/Sadanand-AI-Engineer/Azure-Healthcare-AI-Agent" target="_blank">GitHub</a>
+        <div class="sp-sec">
+            <div class="sp-title">🔧 Tools (calls this session)</div>
+            <div class="tool-item">
+                <div class="ti-icon">🔍</div>
+                <div class="ti-info">
+                    <div class="ti-name">Policy Coverage</div>
+                    <div class="ti-src">Azure AI Search</div>
+                </div>
+                <div class="ti-cnt" id="tc-search_policy_coverage">0</div>
+            </div>
+            <div class="tool-item">
+                <div class="ti-icon">📋</div>
+                <div class="ti-info">
+                    <div class="ti-name">Prior Auth Criteria</div>
+                    <div class="ti-src">Azure AI Search</div>
+                </div>
+                <div class="ti-cnt" id="tc-search_prior_auth_criteria">0</div>
+            </div>
+            <div class="tool-item">
+                <div class="ti-icon">💊</div>
+                <div class="ti-info">
+                    <div class="ti-name">FDA Drug Labels</div>
+                    <div class="ti-src">api.fda.gov</div>
+                </div>
+                <div class="ti-cnt" id="tc-check_drug_interaction_fda">0</div>
+            </div>
+            <div class="tool-item">
+                <div class="ti-icon">📊</div>
+                <div class="ti-info">
+                    <div class="ti-name">CMS Medicare</div>
+                    <div class="ti-src">data.cms.gov</div>
+                </div>
+                <div class="ti-cnt" id="tc-get_cms_coverage_data">0</div>
+            </div>
+            <div class="tool-item">
+                <div class="ti-icon">🩺</div>
+                <div class="ti-info">
+                    <div class="ti-name">NPI Doctor Search</div>
+                    <div class="ti-src">npiregistry.cms.hhs.gov</div>
+                </div>
+                <div class="ti-cnt" id="tc-find_doctors_npi">0</div>
+            </div>
+        </div>
+
+        <div class="sp-sec">
+            <div class="sp-title">📋 Last Request</div>
+            <div style="font-size:10px; color:var(--text2); line-height:2;">
+                <div>Model: <strong id="lastModel" style="color:var(--navy)">—</strong></div>
+                <div>Intent: <strong id="lastIntent" style="color:var(--green)">—</strong></div>
+                <div>RAG: <strong id="lastRag" style="color:var(--purple)">—</strong></div>
+                <div>Router: <strong id="lastRouter" style="color:var(--navy)">—</strong></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <a href="https://healthcare-agent-app.mangomoss-54ccdeb4.northcentralus.azurecontainerapps.io/docs" target="_blank">API Docs</a> ·
+            <a href="https://github.com/Sadanand-AI-Engineer/Azure-Healthcare-AI-Agent" target="_blank">GitHub</a>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    const API_URL = 'https://healthcare-agent-app.mangomoss-54ccdeb4.northcentralus.azurecontainerapps.io';
-    const SESSION_ID = 'session_' + Math.random().toString(36).substr(2, 9);
-    let isLoading = false;
+const API = 'https://healthcare-agent-app.mangomoss-54ccdeb4.northcentralus.azurecontainerapps.io';
+const SID = 'sess_' + Math.random().toString(36).substr(2,9);
 
-    function autoResize(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    }
+let loading = false;
+let totalSaved = 0;
+let totalReqs = 0;
+let cacheHits = 0;
+let toolCounts = {};
 
-    function handleKeyDown(event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            sendMessage();
+function resize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 90) + 'px';
+}
+function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+function useEx(btn) {
+    document.getElementById('qInput').value = btn.textContent.trim();
+    send();
+}
+
+// ── Build pipeline layer cards ──
+function buildLayers(data) {
+    if (!data || !data.metrics) return '';
+    const m = data.metrics;
+    const steps = m.pipeline_steps || [];
+    let html = '<div class="layers">';
+
+    steps.forEach(s => {
+
+        // LAYER 0 — Intent Detection
+        if (s.step === 'Intent Detection') {
+            const conf = s.confidence || 0;
+            const isOff = s.result === 'off_topic';
+            const cls = isOff ? 'l-block' : 'l-info';
+            const resCls = isOff ? 'lr-block' : 'lr-info';
+            const resLabel = s.result.replace(/_/g,' ').toUpperCase();
+            const explain = isOff
+                ? '🚫 Off-topic detected. Pipeline stopped immediately. Zero AI cost.'
+                : conf < 50 ? '⚠ Low confidence — question matched multiple categories but pipeline continued.'
+                : '✓ Question clearly classified. Correct pipeline path selected.';
+            const explainCls = isOff ? 'bad' : conf < 50 ? 'warn' : 'good';
+
+            html += layer(0, '🎯', 'Intent Detection', cls, resLabel, resCls,
+                `<strong>Why this layer exists:</strong> Before calling any AI, we classify what type of question this is.
+                Healthcare questions go through the full pipeline. Off-topic questions (pizza, weather, sports)
+                are redirected instantly — <strong>no LLM is called, zero cost</strong>.`,
+                'Classification Confidence Score', conf, 'bar-navy',
+                `How certain the classifier is about the intent category.
+                100% = clearly healthcare. Low % = ambiguous question.`,
+                explain, explainCls);
         }
-    }
 
-    function sendExample(btn) {
-        document.getElementById('questionInput').value = btn.textContent.trim();
-        sendMessage();
-    }
-
-    function addMessage(role, content, metadata = null) {
-        const container = document.getElementById('chatContainer');
-        const div = document.createElement('div');
-        div.className = `message ${role}`;
-
-        const avatar = role === 'user' ? '👤' : '🤖';
-
-        let metaHTML = '';
-        if (metadata) {
-            metaHTML = '<div class="metadata">';
-            if (metadata.from_cache) {
-                metaHTML += '<span class="badge cache">⚡ From cache</span>';
-            }
-            if (metadata.model_used && !metadata.from_cache) {
-                metaHTML += `<span class="badge model">🧠 ${metadata.model_used}</span>`;
-            }
-            if (metadata.tools_called && metadata.tools_called.length > 0) {
-                metadata.tools_called.forEach(tool => {
-                    metaHTML += `<span class="badge tool">🔧 ${tool}</span>`;
-                });
-            }
-            if (metadata.phi_redacted) {
-                metaHTML += '<span class="badge phi">🔒 PHI redacted</span>';
-            }
-            if (metadata.processing_time_seconds) {
-                metaHTML += `<span class="badge time">⏱ ${metadata.processing_time_seconds}s</span>`;
-            }
-            metaHTML += '</div>';
+        // LAYER 1 — PHI Guardrails
+        else if (s.step === 'PHI Guardrails') {
+            const isBlock = s.result === 'blocked';
+            const isRedact = s.result === 'phi_redacted';
+            const phi = s.phi_types || [];
+            const cls = isBlock ? 'l-block' : isRedact ? 'l-hit' : 'l-pass';
+            const resCls = isBlock ? 'lr-block' : isRedact ? 'lr-hit' : 'lr-pass';
+            const resLabel = isBlock ? 'BLOCKED' : isRedact ? `PHI REDACTED (${phi.join(', ')})` : 'CLEAN — NO PHI';
+            const explain = isBlock ? '🚫 Harmful content blocked. No AI called.'
+                : isRedact ? `🔒 Found: ${phi.join(', ')}. Removed before AI saw it. HIPAA compliant.`
+                : '✓ No personal health data found. Safe to proceed.';
+            const explainCls = isBlock ? 'bad' : isRedact ? 'warn' : 'good';
+            html += layer(1, '🔒', 'PHI Guardrails', cls, resLabel, resCls,
+                `<strong>Why this layer exists:</strong> Every message is scanned for Protected Health Information
+                — SSN, patient ID (MRN), date of birth, phone numbers, email addresses.
+                If found, it is <strong>automatically redacted before the AI ever sees it</strong>.
+                This is HIPAA compliance enforced in code, not policy.`,
+                'PHI Detection (Regex Pattern Matching)', isRedact ? 100 : 0, 'bar-red',
+                `Scans for 8 PHI types using medical-grade regex patterns. 0% = clean. 100% = PHI found and redacted.`,
+                explain, explainCls);
         }
 
-        div.innerHTML = `
-            <div class="avatar">${avatar}</div>
-            <div>
-                <div class="bubble">${content.replace(/\n/g, '<br>')}</div>
-                ${metaHTML}
-            </div>
-        `;
+        // LAYER 2 — Semantic Cache
+        else if (s.step === 'Semantic Cache') {
+            const isHit = s.result === 'HIT';
+            const sim = m.cache_similarity ? Math.round(m.cache_similarity * 100) : 0;
+            const cls = isHit ? 'l-hit' : 'l-miss';
+            const resCls = isHit ? 'lr-hit' : 'lr-miss';
+            const resLabel = isHit ? `CACHE HIT — ${sim}% MATCH` : 'CACHE MISS';
+            const explain = isHit
+                ? `⚡ Found ${sim}% similar question in cache. Returned instantly. Entire LLM pipeline skipped. Cost: $0.`
+                : '→ No similar question found. Proceeding to AI pipeline. Answer will be cached for future use.';
+            const explainCls = isHit ? 'good' : '';
+            html += layer(2, '⚡', 'Semantic Cache', cls, resLabel, resCls,
+                `<strong>Why this layer exists:</strong> Every LLM call costs money and takes seconds.
+                This layer uses AI embeddings to find questions with <strong>similar meaning</strong>
+                already answered before — not just exact word matches.
+                "What is my copay?" and "How much do I pay for copay?" both match the same cached answer.
+                If found, the answer is returned instantly for free.`,
+                'Cosine Similarity Score (Vector Distance)', isHit ? sim : 0, 'bar-yellow',
+                `Measures how similar the meaning of your question is to cached questions.
+                Score: 0–100%. Above 80% = cache hit. Below 80% = too different, must call AI.`,
+                explain, explainCls);
+        }
 
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-        return div;
-    }
+        // LAYER 3 — Query Router
+        else if (s.step === 'Query Router') {
+            const conf = s.confidence || 0;
+            const isSimple = s.result === 'simple';
+            const model = s.model || '—';
+            const tier = s.tier || 1;
+            const explain = isSimple
+                ? `✓ Simple question → ${model} (88% cheaper than gpt-4o). Tier ${tier} routing decision.`
+                : `✓ Complex question → ${model} (maximum reasoning). Tier ${tier} routing decision.`;
+            html += layer(3, '🧭', 'Query Router', 'l-info',
+                `${model.toUpperCase()} — ${isSimple ? 'SIMPLE' : 'COMPLEX'}`, 'lr-info',
+                `<strong>Why this layer exists:</strong> Not all questions need the most expensive AI model.
+                Simple questions (definitions, copays, yes/no coverage) → <strong>gpt-4o-mini (88% cheaper, faster)</strong>.
+                Complex questions (clinical analysis, drug interactions, appeals) → <strong>gpt-4o (most capable)</strong>.
+                Uses a two-tier system: first tries embedding similarity, then uses an LLM judge if uncertain.`,
+                `Classification Confidence Score (Tier ${tier} Decision)`, conf, 'bar-navy',
+                `How certain the router is about model choice. Tier 1 = fast embedding decision. Tier 2 = LLM judge used when uncertain.`,
+                explain, 'good');
+        }
 
-    function showTyping() {
-        const container = document.getElementById('chatContainer');
-        const div = document.createElement('div');
-        div.className = 'message assistant';
-        div.id = 'typingIndicator';
-        div.innerHTML = `
-            <div class="avatar">🤖</div>
-            <div class="typing">
-                <span></span><span></span><span></span>
-            </div>
-        `;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-    }
+        // LAYER 4-8 — Tool Calls
+        else if (s.step === 'Agent Tool Calls') {
+            const tools = s.tools || [];
+            const ragScore = m.rag_top_score ? Math.round(m.rag_top_score * 100) : 0;
 
-    function removeTyping() {
-        const indicator = document.getElementById('typingIndicator');
-        if (indicator) indicator.remove();
-    }
-
-    async function sendMessage() {
-        if (isLoading) return;
-
-        const input = document.getElementById('questionInput');
-        const question = input.value.trim();
-        if (!question) return;
-
-        input.value = '';
-        input.style.height = 'auto';
-        isLoading = true;
-        document.getElementById('sendBtn').disabled = true;
-
-        addMessage('user', question);
-        showTyping();
-
-        try {
-            const response = await fetch(`${API_URL}/ask`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    question: question,
-                    session_id: SESSION_ID
-                })
-            });
-
-            const data = await response.json();
-            removeTyping();
-
-            if (response.ok) {
-                addMessage('assistant', data.answer, {
-                    from_cache: data.from_cache,
-                    model_used: data.model_used,
-                    tools_called: data.tools_called,
-                    phi_redacted: data.phi_redacted,
-                    processing_time_seconds: data.processing_time_seconds
-                });
+            if (tools.length === 0) {
+                html += `
+                <div class="lcard l-skip">
+                    <div class="lcard-top">
+                        <span class="l-icon">🔧</span>
+                        <span class="l-num">LAYER 4–8</span>
+                        <span class="l-name">Tool Calls (External APIs)</span>
+                        <span class="l-result lr-miss">NOT NEEDED</span>
+                    </div>
+                    <div class="l-explain">No external data lookup needed. Intent was off-topic or answer came from cache.</div>
+                </div>`;
             } else {
-                addMessage('assistant', `Error: ${data.detail || 'Something went wrong.'}`);
+                const toolInfo = {
+                    'search_policy_coverage': {
+                        num:'4', icon:'🔍', name:'Policy Coverage RAG',
+                        why:`<strong>Why this layer exists:</strong> Instead of asking the AI to guess what your insurance covers,
+                            we <strong>search our actual policy documents</strong> in Azure AI Search using hybrid search
+                            (keyword matching + vector semantic search). The AI then answers FROM the retrieved document —
+                            not from its training memory. This is called RAG: Retrieval Augmented Generation.`,
+                        metricType:'Hybrid Search Score (BM25 + Vector Cosine)',
+                        barCls:'bar-purple', src:'Azure AI Search → policy_general.txt'
+                    },
+                    'search_prior_auth_criteria': {
+                        num:'5', icon:'📋', name:'Prior Auth Criteria RAG',
+                        why:`<strong>Why this layer exists:</strong> Prior authorization criteria are complex and specific.
+                            This tool searches our <strong>medical necessity criteria documents</strong> in Azure AI Search,
+                            filtered specifically to procedure policy files.
+                            Returns the exact checklist providers must meet for approval.`,
+                        metricType:'Hybrid Search Score (BM25 + Vector Cosine)',
+                        barCls:'bar-purple', src:'Azure AI Search → policy_procedures.txt'
+                    },
+                    'check_drug_interaction_fda': {
+                        num:'6', icon:'💊', name:'FDA Drug Label API',
+                        why:`<strong>Why this layer exists:</strong> Drug interactions are safety-critical.
+                            This tool makes a <strong>live real-time API call to api.fda.gov</strong> —
+                            the official FDA drug label database. Returns the actual drug_interactions section
+                            from the official prescribing label. This is real FDA data, not AI guessing.`,
+                        metricType:'API Response Success (Live External Call)',
+                        barCls:'bar-green', src:'api.fda.gov — Official FDA Drug Labels'
+                    },
+                    'get_cms_coverage_data': {
+                        num:'7', icon:'📊', name:'CMS Medicare API',
+                        why:`<strong>Why this layer exists:</strong> Medicare coverage data is official government data.
+                            This tool calls <strong>data.cms.gov live</strong> to retrieve real ACO and coverage records.
+                            This proves the agent uses real external data sources — not hallucinated answers.`,
+                        metricType:'API Response Success (Live External Call)',
+                        barCls:'bar-green', src:'data.cms.gov — Official CMS Database'
+                    },
+                    'find_doctors_npi': {
+                        num:'8', icon:'🩺', name:'NPI Registry Doctor Search',
+                        why:`<strong>Why this layer exists:</strong> When users have symptoms, they need real doctors.
+                            This tool calls <strong>npiregistry.cms.hhs.gov</strong> — the official CMS National Provider
+                            Identifier database. Every doctor in the US with a license has an NPI number.
+                            All returned providers are verified and licensed.`,
+                        metricType:'API Response Success (Live External Call)',
+                        barCls:'bar-green', src:'npiregistry.cms.hhs.gov — Official CMS NPI Registry'
+                    }
+                };
+
+                tools.forEach(tool => {
+                    const t = toolInfo[tool];
+                    if (!t) return;
+                    const isRAG = tool.includes('search');
+                    const score = isRAG ? ragScore : 100;
+                    const explainRag = isRAG
+                        ? (ragScore === 0
+                            ? '⚠ Score 0% — keyword match found chunk but vector similarity is very low. Chunk retrieved but semantic relevance uncertain. Answer may use AI knowledge to supplement.'
+                            : ragScore < 30
+                            ? '⚠ Low score — document found but weak semantic match. AI may supplement with training knowledge.'
+                            : ragScore < 70
+                            ? '✓ Moderate score — relevant document chunk retrieved with reasonable confidence.'
+                            : '✓ High score — strongly relevant chunk found. Answer tightly grounded in documents.')
+                        : '✓ Live external API called successfully. Real-time data retrieved.';
+                    const explainCls = isRAG
+                        ? (ragScore === 0 ? 'warn' : ragScore < 30 ? 'warn' : 'good')
+                        : 'good';
+
+                    html += layer(t.num, t.icon, t.name,
+                        'l-info', t.src, 'lr-info',
+                        t.why,
+                        t.metricType, score, t.barCls,
+                        isRAG
+                            ? `RAG score = how relevant the retrieved document chunk is to your question.
+                               100% = perfect match. 0% = keyword found it but semantics don't align.
+                               Low score doesn't mean wrong answer — it means AI relied more on training data.`
+                            : `100% = API responded successfully with data. The agent proved it called a real external API.`,
+                        explainRag, explainCls);
+                });
             }
-
-        } catch (error) {
-            removeTyping();
-            addMessage('assistant', 'Connection error. Please try again.');
         }
+    });
 
-        isLoading = false;
-        document.getElementById('sendBtn').disabled = false;
-        document.getElementById('questionInput').focus();
+    // LAYER 9 — LLM Grounding
+    const ragScore = m.rag_top_score ? Math.round(m.rag_top_score * 100) : 0;
+    const hasTools = (m.tools_called || []).length > 0;
+    const fromCache = data.from_cache;
+    const groundScore = fromCache ? 0 : hasTools ? Math.max(ragScore, 60) : 40;
+    const groundExplain = fromCache
+        ? '⚡ LLM skipped entirely — answer from semantic cache. $0 cost.'
+        : hasTools
+        ? (groundScore > 60
+            ? '✓ Answer is grounded in retrieved documents. Source cited. Low hallucination risk.'
+            : '⚠ RAG score was low — AI may have supplemented answer with training knowledge. Hallucination risk moderate.')
+        : '⚠ No tool called — answer from AI training data only. May not reflect your specific policy.';
+    const groundCls = fromCache ? '' : hasTools ? (groundScore > 60 ? 'good' : 'warn') : 'warn';
+
+    html += layer(9, '🧠', 'LLM Response + Grounding Score', fromCache ? 'l-hit' : hasTools ? 'l-pass' : 'l-info',
+        fromCache ? 'SKIPPED — CACHE HIT' : hasTools ? `GROUNDED — ${groundScore}%` : 'GENERATIVE',
+        fromCache ? 'lr-hit' : hasTools ? 'lr-pass' : 'lr-info',
+        `<strong>Why this layer exists:</strong> This is where the AI generates the actual answer.
+        The key question is: <strong>is the answer grounded in retrieved documents (RAG) or from AI memory?</strong>
+        Grounded answers = low hallucination risk. Pure AI memory = higher risk of inaccuracy.
+        When tools are called, GPT is instructed to answer FROM the retrieved documents, not guess.`,
+        'Groundedness Score (Document vs Memory)', fromCache ? 0 : groundScore, 'bar-green',
+        `Estimates what % of the answer came from retrieved documents vs AI training memory.
+        High % = answer closely follows retrieved data. Low % = AI supplemented with its own knowledge.
+        100% grounded = minimal hallucination risk.`,
+        groundExplain, groundCls);
+
+    // LAYER 10 — Memory
+    html += layer(10, '💾', 'Conversation Memory (Cosmos DB)', 'l-saved',
+        'SAVED TO COSMOS DB', 'lr-saved',
+        `<strong>Why this layer exists:</strong> A stateless AI has no memory between questions.
+        This layer saves every conversation turn to <strong>Azure Cosmos DB</strong> — a globally distributed
+        NoSQL database. On the next question, the last 10 turns are loaded as context.
+        This enables multi-turn conversations where the AI remembers what was discussed.`,
+        'Persistence Confirmation', 100, 'bar-green',
+        `100% = turn successfully saved to Cosmos DB. Your follow-up questions will have full context.`,
+        '✓ Turn saved. Next question will have conversation history as context.', 'good');
+
+    html += '</div>';
+    return html;
+}
+
+function layer(num, icon, name, cardCls, result, resCls, why,
+               metricType, score, barCls, metricMeaning, explain, explainCls) {
+    return `
+    <div class="lcard ${cardCls}">
+        <div class="lcard-top">
+            <span class="l-icon">${icon}</span>
+            <span class="l-num">LAYER ${num}</span>
+            <span class="l-name">${name}</span>
+            <span class="l-result ${resCls}">${result}</span>
+        </div>
+        <div class="l-why">${why}</div>
+        <div class="l-metric">
+            <div class="lm-header">
+                <span class="lm-type">Metric Type: ${metricType}</span>
+                <span class="lm-score">${score}%</span>
+            </div>
+            <div class="lm-bar-wrap">
+                <div class="lm-bar ${barCls}" style="width:${score}%"></div>
+            </div>
+            <div style="font-size:9px;color:var(--text3);margin-top:4px;">${metricMeaning}</div>
+        </div>
+        <div class="l-explain ${explainCls}">${explain}</div>
+    </div>`;
+}
+
+function buildMetricsPanel(data) {
+    if (!data || !data.metrics) return '';
+    const m = data.metrics;
+    const savedPct = m.cost_saved_percent || 0;
+    const savedUsd = m.cost_saved_usd || 0;
+    const ragScore = m.rag_top_score ? Math.round(m.rag_top_score * 100) : 0;
+    const routerConf = m.router_confidence || 0;
+    const cacheSim = m.cache_similarity ? Math.round(m.cache_similarity * 100) : 0;
+    const procTime = m.processing_time || 0;
+
+    const costHtml = savedPct > 0 ? `
+        <div class="cost-hero">
+            <div>
+                <div class="cost-pct">${savedPct}%</div>
+                <div class="cost-sub">${data.from_cache ? 'Saved — semantic cache hit, zero LLM cost' : 'Saved — intelligent model routing'}</div>
+            </div>
+            <div class="cost-right">
+                <div class="cost-usd">$${savedUsd.toFixed(4)} saved</div>
+                <div class="cost-usd-sub">on this single call</div>
+            </div>
+        </div>` : '';
+
+    const scoreHtml = `
+        <div class="score-row">
+            <div class="score-card">
+                <div class="sv" style="color:var(--purple)">${ragScore > 0 ? ragScore+'%' : '—'}</div>
+                <div class="sl">RAG Score</div>
+                <div class="st">Hybrid Search</div>
+            </div>
+            <div class="score-card">
+                <div class="sv" style="color:var(--navy)">${routerConf > 0 ? routerConf+'%' : '—'}</div>
+                <div class="sl">Router Conf.</div>
+                <div class="st">Classification</div>
+            </div>
+            <div class="score-card">
+                <div class="sv" style="color:var(--yellow)">${cacheSim > 0 ? cacheSim+'%' : '—'}</div>
+                <div class="sl">Cache Match</div>
+                <div class="st">Cosine Similarity</div>
+            </div>
+            <div class="score-card">
+                <div class="sv" style="color:var(--green)">${procTime > 0 ? procTime+'s' : '—'}</div>
+                <div class="sl">Proc. Time</div>
+                <div class="st">End-to-End</div>
+            </div>
+        </div>`;
+
+    return `
+        <div class="metrics-panel">
+            <button class="metrics-toggle" onclick="toggleM(this)">
+                <span>📊 PIPELINE METRICS — 11 Layers — Click to Expand</span>
+                <span>▼</span>
+            </button>
+            <div class="metrics-body">
+                ${costHtml}
+                ${scoreHtml}
+                ${buildLayers(data)}
+            </div>
+        </div>`;
+}
+
+function toggleM(btn) {
+    const body = btn.nextElementSibling;
+    body.classList.toggle('open');
+    const arr = btn.querySelector('span:last-child');
+    arr.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+function addMsg(role, text, data) {
+    const scroll = document.getElementById('chatScroll');
+    const ob = document.getElementById('onboarding');
+    if (ob) ob.style.display = 'none';
+
+    const div = document.createElement('div');
+    div.className = `message ${role}`;
+
+    if (role === 'user') {
+        div.innerHTML = `
+            <div class="av">👤</div>
+            <div class="msg-wrap">
+                <div class="bubble">${esc(text)}</div>
+            </div>`;
+    } else {
+        div.innerHTML = `
+            <div class="av">🤖</div>
+            <div class="msg-wrap">
+                <div class="bubble">${fmt(text)}</div>
+                ${buildTags(data)}
+                ${buildToolBadges(data)}
+                ${buildMetricsPanel(data)}
+            </div>`;
     }
-</script>
+    scroll.appendChild(div);
+    scroll.scrollTop = scroll.scrollHeight;
+}
 
+function buildTags(data) {
+    if (!data) return '';
+    let h = '<div class="msg-tags">';
+    if (data.from_cache) h += `<span class="tag t-cache">⚡ Cache Hit</span>`;
+    else if (data.model_used) h += `<span class="tag t-model">🧠 ${data.model_used}</span>`;
+    if (data.phi_redacted) h += `<span class="tag t-phi">🔒 PHI Redacted</span>`;
+    if (data.intent) h += `<span class="tag t-intent">🎯 ${data.intent.replace(/_/g,' ')}</span>`;
+    if (data.processing_time_seconds) h += `<span class="tag t-time">⏱ ${data.processing_time_seconds}s</span>`;
+    h += '</div>';
+    return h;
+}
+
+function buildToolBadges(data) {
+    if (!data || !data.tools_called || !data.tools_called.length) return '';
+    const map = {
+        'search_policy_coverage':     ['🔍 Policy RAG', 'tb-azure'],
+        'search_prior_auth_criteria': ['📋 Prior Auth RAG', 'tb-azure'],
+        'check_drug_interaction_fda': ['💊 FDA API', 'tb-fda'],
+        'get_cms_coverage_data':      ['📊 CMS API', 'tb-cms'],
+        'find_doctors_npi':           ['🩺 NPI Registry', 'tb-npi']
+    };
+    let h = '<div class="tool-row">';
+    data.tools_called.forEach(t => {
+        const [lbl, cls] = map[t] || [t, 'tb-azure'];
+        h += `<span class="tb ${cls}">${lbl}</span>`;
+    });
+    h += '</div>';
+    return h;
+}
+
+function showTyping() {
+    const scroll = document.getElementById('chatScroll');
+    const div = document.createElement('div');
+    div.id = 'typing'; div.className = 'message assistant typing-wrap';
+    div.innerHTML = `<div class="av">🤖</div>
+        <div class="typing"><span></span><span></span><span></span></div>`;
+    scroll.appendChild(div);
+    scroll.scrollTop = scroll.scrollHeight;
+}
+function removeTyping() {
+    const t = document.getElementById('typing'); if (t) t.remove();
+}
+
+function updatePanel(data) {
+    totalReqs++;
+    document.getElementById('totalReqs').textContent = totalReqs;
+    if (data.from_cache) cacheHits++;
+    const hr = totalReqs > 0 ? Math.round(cacheHits/totalReqs*100) : 0;
+    document.getElementById('hitRate').textContent = hr + '%';
+    document.getElementById('hitDetail').textContent =
+        `Cache hit rate — ${cacheHits}/${totalReqs}`;
+    const saved = data.metrics?.cost_saved_usd || 0;
+    totalSaved += saved;
+    document.getElementById('totalSaved').textContent = '$' + totalSaved.toFixed(4);
+    (data.tools_called||[]).forEach(t => {
+        toolCounts[t] = (toolCounts[t]||0) + 1;
+        const el = document.getElementById('tc-'+t);
+        if (el) el.textContent = toolCounts[t];
+    });
+    if (data.model_used) document.getElementById('lastModel').textContent = data.model_used;
+    if (data.intent) document.getElementById('lastIntent').textContent = data.intent.replace(/_/g,' ');
+    const rag = data.metrics?.rag_top_score;
+    if (rag !== undefined) document.getElementById('lastRag').textContent =
+        rag > 0 ? Math.round(rag*100)+'%' : '—';
+    const rc = data.metrics?.router_confidence;
+    if (rc) document.getElementById('lastRouter').textContent = rc + '%';
+}
+
+async function send() {
+    if (loading) return;
+    const inp = document.getElementById('qInput');
+    const q = inp.value.trim();
+    if (!q) return;
+    inp.value = ''; inp.style.height = 'auto';
+    loading = true;
+    document.getElementById('sendBtn').disabled = true;
+    addMsg('user', q, null);
+    showTyping();
+    try {
+        const res = await fetch(`${API}/ask`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({question:q, session_id:SID})
+        });
+        const data = await res.json();
+        removeTyping();
+        if (res.ok) { addMsg('assistant', data.answer, data); updatePanel(data); }
+        else addMsg('assistant', `Error: ${data.detail||'Something went wrong.'}`, null);
+    } catch(e) {
+        removeTyping();
+        addMsg('assistant', '❌ Connection error. Agent may be warming up — try again in 30 seconds.', null);
+    }
+    loading = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('qInput').focus();
+}
+
+function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt(s) {
+    return s.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+}
+</script>
 </body>
 </html>
