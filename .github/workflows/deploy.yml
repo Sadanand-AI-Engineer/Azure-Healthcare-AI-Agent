@@ -123,15 +123,18 @@ jobs:
           VERSION=${{ needs.build.outputs.image_tag }}
 
           az containerapp update \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${IMAGE}:${VERSION} \
+            --name healthcare-agent-app \
+            --resource-group healthcare-agent-rg \
+            --image $IMAGE:$VERSION \
             --set-env-vars \
               OPENAI_API_KEY=secretref:openai-key \
-              AZURE_SEARCH_ENDPOINT=secretref:search-endpoint \
+              AZURE_SEARCH_ENDPOINT="https://healthcare-ai-agent-search.search.windows.net" \
               AZURE_SEARCH_KEY=secretref:search-key \
-              COSMOS_ENDPOINT=secretref:cosmos-endpoint \
+              AZURE_SEARCH_INDEX="healthcare-docs" \
+              COSMOS_ENDPOINT="https://healthcare-cosmos.documents.azure.com:443/" \
               COSMOS_KEY=secretref:cosmos-key \
+              COSMOS_DB="healthcare_agent" \
+              COSMOS_CONTAINER="conversations" \
               AZURE_STORAGE_CONNECTION_STRING=secretref:storage-conn \
               SIMPLE_MODEL=gpt-4o-mini \
               COMPLEX_MODEL=gpt-4o \
@@ -148,7 +151,7 @@ jobs:
           sleep 30
 
           # Test health endpoint
-          URL="https://${{ env.CONTAINER_APP_NAME }}.azurecontainerapps.io"
+          URL="https://healthcare-agent-app.mangomoss-54ccdeb4.northcentralus.azurecontainerapps.io"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${URL}/health)
 
           if [ "$STATUS" = "200" ]; then
